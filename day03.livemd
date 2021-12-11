@@ -1,0 +1,44 @@
+# Day 03
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Problem input")
+```
+
+## Part 1
+
+```elixir
+number_of_bits = 5
+
+gamma_rate =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n")
+  |> Stream.map(&String.codepoints/1)
+  |> Enum.zip()
+  |> Enum.map(
+    &(Tuple.to_list(&1)
+      |> Enum.frequencies()
+      |> Enum.max_by(fn {_b, count} -> count end))
+  )
+  |> Enum.map(fn {b, _c} -> b end)
+  |> Enum.join()
+
+epsilon_rate =
+  gamma_rate
+  |> String.codepoints()
+  |> Stream.map(fn
+    "1" -> "0"
+    "0" -> "1"
+  end)
+  |> Enum.join()
+
+String.to_integer(gamma_rate, 2) * String.to_integer(epsilon_rate, 2)
+```

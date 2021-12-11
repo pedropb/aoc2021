@@ -53,3 +53,19 @@ input
 |> Enum.map(fn [x, y] -> [x, String.to_integer(y)] end)
 |> Recursion.recur()
 ```
+
+## Part 2 - reduce
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split("\n", trim: true)
+|> Stream.map(&String.split(&1, " "))
+|> Enum.map(fn [x, y] -> [x, String.to_integer(y)] end)
+|> Enum.reduce({_h = 0, _d = 0, _a = 0}, fn
+  ["forward", x], {h, d, a} -> {h + x, d + a * x, a}
+  ["up", x], {h, d, a} -> {h, d, a - x}
+  ["down", x], {h, d, a} -> {h, d, a + x}
+end)
+|> then(fn {h, d, _a} -> h * d end)
+```

@@ -1,0 +1,55 @@
+# Day 02
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Problem input")
+```
+
+## Part 1
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split("\n", trim: true)
+|> Stream.map(&String.split(&1, " "))
+|> Stream.map(fn
+  ["forward", x] -> [String.to_integer(x), 0]
+  ["down", x] -> [0, String.to_integer(x)]
+  ["up", x] -> [0, -String.to_integer(x)]
+end)
+|> Enum.zip()
+|> Enum.map(&Tuple.sum/1)
+|> Enum.product()
+```
+
+## Part 2
+
+```elixir
+defmodule Recursion do
+  def recur([head | tail]), do: recur(tail, head, [0, 0, 0])
+
+  def recur([head | tail], ["forward", x], [h, d, a]),
+    do: recur(tail, head, [h + x, d + a * x, a])
+
+  def recur([head | tail], ["up", x], [h, d, a]), do: recur(tail, head, [h, d, a - x])
+  def recur([head | tail], ["down", x], [h, d, a]), do: recur(tail, head, [h, d, a + x])
+  def recur([], ["forward", x], [h, d, a]), do: recur([], [], [h + x, d + a * x, a])
+  def recur([], _, [h, d, _a]), do: h * d
+end
+```
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split("\n", trim: true)
+|> Stream.map(&String.split(&1, " "))
+|> Enum.map(fn [x, y] -> [x, String.to_integer(y)] end)
+|> Recursion.recur()
+```

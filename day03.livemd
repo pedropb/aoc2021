@@ -15,8 +15,6 @@ input = Kino.Input.textarea("Problem input")
 ## Part 1
 
 ```elixir
-number_of_bits = 5
-
 gamma_rate =
   input
   |> Kino.Input.read()
@@ -41,4 +39,56 @@ epsilon_rate =
   |> Enum.join()
 
 String.to_integer(gamma_rate, 2) * String.to_integer(epsilon_rate, 2)
+```
+
+## Part 2
+
+```elixir
+defmodule Solver do
+  def bit_frequencies(numbers_list, position) do
+    numbers_list
+    |> Stream.map(&String.at(&1, position))
+    |> Enum.frequencies()
+  end
+
+  def o2_bit_criteria(numbers_list, position) do
+    bit_frequencies(numbers_list, position)
+    |> then(fn
+      %{"0" => zeroes, "1" => ones} when ones >= zeroes -> "1"
+      _ -> "0"
+    end)
+  end
+
+  def co2_bit_criteria(numbers_list, position) do
+    bit_frequencies(numbers_list, position)
+    |> then(fn
+      %{"0" => zeroes, "1" => ones} when ones < zeroes -> "1"
+      _ -> "0"
+    end)
+  end
+
+  def find_rating(numbers) do
+    o2_rating = find_rating(numbers, 0, &o2_bit_criteria/2)
+    co2_rating = find_rating(numbers, 0, &co2_bit_criteria/2)
+    String.to_integer(o2_rating, 2) * String.to_integer(co2_rating, 2)
+  end
+
+  def find_rating(numbers, _position, _criteria_fun) when length(numbers) == 1,
+    do: List.first(numbers)
+
+  def find_rating(numbers, position, criteria_fun) do
+    criteria = criteria_fun.(numbers, position)
+
+    find_rating(
+      Enum.filter(numbers, &(String.at(&1, position) == criteria)),
+      position + 1,
+      criteria_fun
+    )
+  end
+end
+
+input
+|> Kino.Input.read()
+|> String.split("\n")
+|> Solver.find_rating()
 ```

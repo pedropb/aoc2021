@@ -1,0 +1,82 @@
+# Day 4
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"},
+  {:nimble_parsec, "~> 1.0"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Problem input")
+```
+
+## Part 1
+
+```elixir
+defmodule Parser do
+  import NimbleParsec
+
+  bingo_numbers =
+    repeat(
+      integer(min: 1)
+      |> optional(ignore(string(",")))
+    )
+    |> reduce({List, :wrap, []})
+    |> ignore(string("\n"))
+
+  board_row =
+    times(
+      repeat(ignore(string(" ")))
+      |> integer(min: 1)
+      |> repeat(ignore(string(" "))),
+      5
+    )
+    |> optional(ignore(string("\n")))
+
+  board =
+    times(
+      board_row,
+      5
+    )
+    |> reduce({List, :wrap, []})
+
+  boards =
+    repeat(
+      board
+      |> ignore(optional(string("\n")))
+    )
+
+  defparsec(
+    :parse,
+    bingo_numbers
+    |> ignore(string("\n"))
+    |> concat(boards)
+  )
+end
+
+parsed_input =
+  input
+  |> Kino.Input.read()
+  |> Parser.parse()
+  |> elem(1)
+
+[bingo_numbers | boards] = parsed_input
+```
+
+```elixir
+defmodule Board do
+end
+```
+
+```elixir
+# (x,y) -> (true/false, number)
+
+defmodule Solver do
+  def solve(board, numbers) do
+    Enum.reduce()
+  end
+end
+```

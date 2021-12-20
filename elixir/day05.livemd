@@ -1,0 +1,55 @@
+# Day 5
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Problem input")
+```
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split("\n", trim: true)
+|> Stream.map(fn x ->
+  x
+  |> String.split(" -> ", trim: true)
+  |> Enum.flat_map(&String.split(&1, ",", trim: true))
+  |> Enum.map(&String.to_integer/1)
+end)
+|> Enum.flat_map(fn
+  [x, y1, x, y2] -> Enum.zip(Stream.cycle([x]), y1..y2)
+  [x1, y, x2, y] -> Enum.zip(x1..x2, Stream.cycle([y]))
+  [_x1, _y1, _x2, _y2] -> []
+end)
+|> Enum.frequencies()
+|> Map.values()
+|> Enum.count(fn x -> x >= 2 end)
+```
+
+## Part 2
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split("\n", trim: true)
+|> Stream.map(fn x ->
+  x
+  |> String.split(" -> ", trim: true)
+  |> Enum.flat_map(&String.split(&1, ",", trim: true))
+  |> Enum.map(&String.to_integer/1)
+end)
+|> Enum.flat_map(fn
+  [x, y1, x, y2] -> Enum.zip(Stream.cycle([x]), y1..y2)
+  [x1, y, x2, y] -> Enum.zip(x1..x2, Stream.cycle([y]))
+  [x1, y1, x2, y2] -> Enum.zip(x1..x2, y1..y2)
+end)
+|> Enum.frequencies()
+|> Map.values()
+|> Enum.count(fn x -> x >= 2 end)
+```

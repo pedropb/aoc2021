@@ -1,0 +1,68 @@
+# Day 7
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Problem input")
+```
+
+```elixir
+parsed_input =
+  input
+  |> Kino.Input.read()
+  |> String.split(",")
+  |> Enum.map(&String.to_integer/1)
+```
+
+```elixir
+parsed_input
+|> Enum.min_max()
+```
+
+## Part 1
+
+```elixir
+freq =
+  parsed_input
+  |> Enum.frequencies()
+
+possible_solutions =
+  freq
+  |> Map.keys()
+  |> Enum.min_max()
+  |> then(fn {min, max} -> Range.new(min, max) end)
+
+Enum.reduce(possible_solutions, :infinity, fn sol, best ->
+  fuel_spent =
+    Enum.map(freq, fn {position, crabs} -> abs(position - sol) * crabs end)
+    |> Enum.sum()
+
+  if fuel_spent < best do
+    fuel_spent
+  else
+    best
+  end
+end)
+```
+
+## Part 2
+
+```elixir
+Enum.reduce(possible_solutions, :infinity, fn sol, best ->
+  fuel_spent =
+    Enum.map(freq, fn {position, crabs} -> (1..abs(position - sol) |> Enum.sum()) * crabs end)
+    |> Enum.sum()
+
+  if fuel_spent < best do
+    fuel_spent
+  else
+    best
+  end
+end)
+```

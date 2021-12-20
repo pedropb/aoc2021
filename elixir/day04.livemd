@@ -13,8 +13,6 @@ Mix.install([
 input = Kino.Input.textarea("Problem input")
 ```
 
-## Part 1
-
 ```elixir
 defmodule Parser do
   import NimbleParsec
@@ -66,17 +64,157 @@ parsed_input =
 [bingo_numbers | boards] = parsed_input
 ```
 
-```elixir
-defmodule Board do
-end
-```
+## Part 1
 
 ```elixir
-# (x,y) -> (true/false, number)
-
 defmodule Solver do
-  def solve(board, numbers) do
-    Enum.reduce()
+  def board_solutions(board_size \\ 5) do
+    # each row
+    # each column
+    Enum.reduce((board_size - 1)..0, [], fn row, solutions ->
+      [
+        Enum.reduce(
+          (row * board_size)..(board_size * (row + 1) - 1),
+          MapSet.new(),
+          &MapSet.put(&2, &1)
+        )
+        | solutions
+      ]
+    end) ++
+      Enum.reduce((board_size - 1)..0, [], fn col, solutions ->
+        [
+          Enum.reduce(
+            col..(board_size * board_size - 1)//board_size,
+            MapSet.new(),
+            &MapSet.put(&2, &1)
+          )
+          | solutions
+        ]
+      end)
+  end
+
+  def board_won?(board, numbers) do
+    marked_positions =
+      numbers
+      |> Stream.map(&Enum.find_index(board, fn x -> x == &1 end))
+      |> MapSet.new()
+
+    board_solutions()
+    |> Enum.any?(&MapSet.subset?(&1, marked_positions))
+  end
+
+  def solve(boards, all_numbers) do
+    initial_sums =
+      boards
+      |> Stream.map(&Enum.sum/1)
+      |> Enum.to_list()
+
+    Enum.reduce_while(all_numbers, [[] | initial_sums], fn
+      draw, [drawn_numbers | unmarked_sums] ->
+        boards_containing_draw =
+          boards
+          |> Stream.map(fn b -> draw in b end)
+
+        acc_numbers = [draw | drawn_numbers]
+
+        acc_sums =
+          Stream.zip(unmarked_sums, boards_containing_draw)
+          |> Stream.map(fn
+            {s, true} -> s - draw
+            {s, false} -> s
+          end)
+
+        result =
+          Stream.zip(boards, unmarked_sums)
+          |> Stream.filter(fn {b, _s} -> board_won?(b, acc_numbers) end)
+          |> Enum.map(fn {_b, s} -> draw * (s - draw) end)
+
+        if length(result) == 0 do
+          {:cont, [acc_numbers | acc_sums]}
+        else
+          {:halt, List.first(result)}
+        end
+    end)
   end
 end
+
+Solver.solve(boards, bingo_numbers)
+```
+
+## Part 2
+
+```elixir
+defmodule Solver2 do
+  def board_solutions(board_size \\ 5) do
+    Enum.reduce((board_size - 1)..0, [], fn row, solutions ->
+      [
+        Enum.reduce(
+          (row * board_size)..(board_size * (row + 1) - 1),
+          MapSet.new(),
+          &MapSet.put(&2, &1)
+        )
+        | solutions
+      ]
+    end) ++
+      Enum.reduce((board_size - 1)..0, [], fn col, solutions ->
+        [
+          Enum.reduce(
+            col..(board_size * board_size - 1)//board_size,
+            MapSet.new(),
+            &MapSet.put(&2, &1)
+          )
+          | solutions
+        ]
+      end)
+  end
+
+  def board_won?(board, numbers) do
+    marked_positions =
+      numbers
+      |> Stream.map(&Enum.find_index(board, fn x -> x == &1 end))
+      |> MapSet.new()
+
+    board_solutions()
+    |> Enum.any?(&MapSet.subset?(&1, marked_positions))
+  end
+
+  def solve(boards, all_numbers) do
+    initial_sums =
+      boards
+      |> Stream.map(&Enum.sum/1)
+      |> Enum.to_list()
+
+    Enum.reduce_while(all_numbers, [[[], []] | initial_sums], fn
+      draw, [[drawn_numbers, solved_boards] | unmarked_sums] ->
+        boards_containing_draw =
+          boards
+          |> Stream.map(fn b -> draw in b end)
+
+        acc_numbers = [draw | drawn_numbers]
+
+        acc_sums =
+          Stream.zip(unmarked_sums, boards_containing_draw)
+          |> Stream.map(fn
+            {s, true} -> s - draw
+            {s, false} -> s
+          end)
+
+        acc_solved_boards =
+          Stream.zip(boards, Stream.iterate(0, &(&1 + 1)))
+          |> Stream.filter(fn {b, _i} -> board_won?(b, acc_numbers) end)
+          |> Stream.filter(fn {_b, i} -> i not in solved_boards end)
+          |> Enum.map(fn t -> elem(t, 1) end)
+
+        if length(solved_boards) + length(acc_solved_boards) == length(boards) do
+          last_board = List.first(acc_solved_boards)
+          last_board_unmarked_sum = Enum.at(acc_sums, last_board)
+          {:halt, draw * last_board_unmarked_sum}
+        else
+          {:cont, [[acc_numbers, acc_solved_boards ++ solved_boards] | acc_sums]}
+        end
+    end)
+  end
+end
+
+Solver2.solve(boards, bingo_numbers)
 ```

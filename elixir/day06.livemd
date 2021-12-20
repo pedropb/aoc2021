@@ -1,0 +1,60 @@
+# Day 6
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Problem input")
+```
+
+```elixir
+parsed_input =
+  input
+  |> Kino.Input.read()
+  |> String.split(",")
+  |> Stream.map(&String.to_integer/1)
+```
+
+## Part 1 and 2
+
+```elixir
+initial_ages =
+  0..8
+  |> Enum.map(fn x -> {x, 0} end)
+  |> Enum.into(%{})
+  |> Map.merge(parsed_input |> Enum.frequencies())
+```
+
+```elixir
+defmodule Solver do
+  def decrement(ages) do
+    {
+      ages[0],
+      ages
+      |> Enum.map(fn
+        {0, v} -> {6, v}
+        {k, v} -> {k - 1, v}
+      end)
+      |> Enum.reduce(%{}, fn {k, v}, m ->
+        Map.put(m, k, (m[k] || 0) + v)
+      end)
+    }
+  end
+
+  def solve(initial_ages, time_limit) do
+    Enum.reduce(1..time_limit, initial_ages, fn _day, ages ->
+      {new_fishes, ages} = decrement(ages)
+      Map.put(ages, 8, ages[8] || 0 + new_fishes)
+    end)
+    |> Map.values()
+    |> Enum.sum()
+  end
+end
+
+Solver.solve(initial_ages, 256)
+```

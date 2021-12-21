@@ -1,0 +1,56 @@
+# Day 9
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~>0.4.1"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Problem input")
+```
+
+```elixir
+input_map =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n")
+  |> Enum.map(fn x ->
+    String.split(x, "", trim: true)
+    |> Enum.map(&String.to_integer/1)
+  end)
+  |> Enum.reduce({%{}, {0, 0}}, fn row, acc ->
+    row
+    |> Enum.reduce(acc, fn height, {map, {x, y}} ->
+      {Map.put(map, {x, y}, height), {x, y + 1}}
+    end)
+    |> then(fn {map, {x, _y}} -> {map, {x + 1, 0}} end)
+  end)
+  |> then(fn {map, _} -> map end)
+```
+
+## Part 1
+
+```elixir
+defmodule Solver do
+  def low_point?({x, y}, map) do
+    top = map[{x - 1, y}] || 10
+    bottom = map[{x + 1, y}] || 10
+    left = map[{x, y - 1}] || 10
+    right = map[{x, y + 1}] || 10
+
+    Enum.all?([top, bottom, left, right], fn adj -> adj > map[{x, y}] end)
+  end
+
+  def score({_, height}) do
+    height + 1
+  end
+end
+
+input_map
+|> Enum.filter(fn {{x, y}, _height} -> Solver.low_point?({x, y}, input_map) end)
+|> Enum.map(&Solver.score/1)
+|> Enum.sum()
+```

@@ -1,0 +1,170 @@
+# Day 8
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Problem input")
+```
+
+```elixir
+parsed_input =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n")
+  |> Enum.flat_map(fn x ->
+    x
+    |> String.split(" | ", trim: true)
+    |> Enum.map(&String.split(&1, " "))
+  end)
+
+heads =
+  parsed_input
+  |> Enum.take_every(2)
+
+tails =
+  parsed_input
+  |> Enum.drop_every(2)
+```
+
+## Part 1
+
+```elixir
+defmodule Solver do
+  def mapper(2), do: 1
+  def mapper(3), do: 7
+  def mapper(4), do: 4
+  def mapper(5), do: [2, 3, 5]
+  def mapper(6), do: [0, 6, 9]
+  def mapper(7), do: 8
+  def mapper(_), do: nil
+end
+
+tails
+|> Enum.flat_map(&Function.identity/1)
+|> Enum.map(&String.length/1)
+|> Enum.map(&Solver.mapper/1)
+|> Enum.filter(&is_number/1)
+|> Enum.count()
+
+# |> Enum.flat_map(fn x -> x |> Enum.map(fn y -> y |> String.to_charlist() |> length() |> IO.inspect()  end) end)
+```
+
+## Part 2
+
+```elixir
+defmodule Solver2 do
+  def find_known_values(codes) do
+    codes
+    |> Enum.map(fn x -> {String.length(x), x} end)
+    |> Enum.map(fn
+      {2, x} -> {1, x}
+      {3, x} -> {7, x}
+      {4, x} -> {4, x}
+      {7, x} -> {8, x}
+      {_, x} -> {nil, x}
+    end)
+    |> Enum.filter(fn {x, _} -> is_number(x) end)
+    |> Map.new()
+  end
+
+  def inverted_lookup(map) do
+    Map.new(map, fn {key, val} -> {val, key} end)
+  end
+
+  def string_to_mapset(string) do
+    string
+    |> String.to_charlist()
+    |> MapSet.new()
+  end
+
+  def decipher(code, known_values) do
+    decipher(code, known_values, String.length(code))
+  end
+
+  def decipher(code, known_values, 5) do
+    code_set =
+      code
+      |> string_to_mapset()
+
+    four =
+      known_values[4]
+      |> string_to_mapset()
+
+    one =
+      known_values[1]
+      |> string_to_mapset()
+
+    if Enum.count(MapSet.intersection(code_set, four)) == 2 do
+      2
+    else
+      if Enum.count(MapSet.intersection(code_set, one)) == 2 do
+        3
+      else
+        5
+      end
+    end
+  end
+
+  def decipher(code, known_values, 6) do
+    code_set =
+      code
+      |> string_to_mapset()
+
+    seven =
+      known_values[7]
+      |> string_to_mapset()
+
+    four =
+      known_values[4]
+      |> string_to_mapset()
+
+    if Enum.count(MapSet.intersection(code_set, seven)) == 2 do
+      6
+    else
+      if Enum.count(MapSet.intersection(code_set, four)) == 4 do
+        9
+      else
+        0
+      end
+    end
+  end
+
+  def decipher(code, known_values, _code_length) do
+    inverted_lookup(known_values)[code]
+  end
+
+  def translate_digits(head, tail) do
+    known_values = find_known_values(head)
+
+    code_map =
+      head
+      |> Enum.map(fn code -> {decipher(code, known_values), code} end)
+      |> Map.new()
+      |> Map.merge(known_values)
+      |> inverted_lookup()
+      |> Enum.map(fn {code, number} ->
+        {
+          code |> string_to_mapset(),
+          number
+        }
+      end)
+      |> Map.new()
+
+    tail
+    |> Enum.map(fn code -> code_map[code |> string_to_mapset()] end)
+    |> Enum.join()
+    |> String.to_integer()
+  end
+end
+
+parsed_input
+|> Enum.chunk_every(2)
+|> Enum.map(fn [head, tail] -> Solver2.translate_digits(head, tail) end)
+|> Enum.sum()
+```
